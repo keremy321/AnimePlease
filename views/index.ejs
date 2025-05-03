@@ -1,0 +1,357 @@
+<%- include('partials/header.ejs') %>
+
+<main>
+    <div>
+        <div class="chooseAnime">
+            <h2>Find Your Next Anime To Watch</h2>
+            <p>If you choose anime similar to the one you want to watch or genres and tags you like/dislike, We can make recommendations for you.</p>
+            
+            <form class="animeForm">
+                <div class="search-wrapper">
+                    <input type="text" id="anime-title" placeholder="Enter an anime title..." autocomplete="off">
+                    <div id="search-results" class="search-results"></div>
+                </div>                
+                <div class="container-wrapper position-relative">
+                    <div>
+                        <h6>Included Genres</h6>
+                        <select class="selection-container" name="includedGenres[]" multiple="multiple" style="width: 300px;" id="included-genres">
+                            <!-- Options will be dynamically inserted here by fetchGenres() -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h6>Excluded Genres</h6>
+                        <select class="selection-container" name="excludedGenres[]" multiple="multiple" style="width: 300px;" id="excluded-genres">
+                            <!-- Options will be dynamically inserted here by fetchGenres() -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h6>Included Tags</h6>
+                        <select class="selection-container" name="includedTags[]" multiple="multiple" style="width: 300px;" id="included-tags">
+                            <!-- Tags will be dynamically inserted here by fetchTags() -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h6>Excluded Tags</h6>
+                        <select class="selection-container" name="excludedTags[]" multiple="multiple" style="width: 300px;" id="excluded-tags">
+                            <!-- Tags will be dynamically inserted here by fetchTags() -->
+                        </select>      
+                    </div>         
+                </div>
+
+                <div class="rating-slider">
+                    <label for="rating-slider">Rating</label>
+                    <div id="rating-slider"></div>
+                    <span id="slider-value" class="slider-value">0-100</span>
+                </div>
+
+                <div class="year-slider">
+                    <label for="year-slider">Year</label>
+                    <div id="year-slider"></div>
+                    <span id="year-slider-value" class="slider-value">1970-2025</span>
+                </div>                
+
+                <div class="center-btn">
+                    <button type="button" id="suggest-button">Suggest</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="suggestedAnimes">
+            <hr>
+            <h2>Suggested Animes</h2>
+            <div class="suggestedAllAnimes container py-3 rounded" style="background-color: #1D1D1D; box-shadow: 0 0 20px 20px #8d67bc31">
+                <!-- there goes the suggested anime cards -->
+            </div>
+        </div>
+        
+    </div>
+</main>
+
+<script>
+        const ratingSlider = document.getElementById('rating-slider');
+        const ratingDisplay = document.getElementById('slider-value');
+
+        noUiSlider.create(ratingSlider, {
+            start: [0, 100], // Start with the full range selected
+            connect: true, // Connects the handles with a colored bar
+            range: {
+                'min': 0,
+                'max': 100
+            },
+            step: 1, // Slider steps by 1
+            tooltips: true, // Show tooltips for each handle
+            format: {
+                to: (value) => Math.round(value), // Round values in tooltip
+                from: (value) => Number(value)
+            }
+        });
+
+        // Update rating display on slider change
+        ratingSlider.noUiSlider.on('update', (values) => {
+            ratingDisplay.textContent = `${values[0]} - ${values[1]}`;
+        });
+
+        // Initialize and update year slider display
+        const yearSlider = document.getElementById('year-slider');
+        const yearDisplay = document.getElementById('year-slider-value');
+        const currentYear = new Date().getFullYear() + 1; // Get the next year
+
+        noUiSlider.create(yearSlider, {
+            start: [1970, currentYear], // Start with the full range selected
+            connect: true, // Connects the handles with a colored bar
+            range: {
+                'min': 1970,
+                'max': currentYear
+            },
+            step: 1, // Slider steps by 1 year
+            tooltips: true, // Show tooltips for each handle
+            format: {
+                to: (value) => Math.round(value), // Round values in tooltip
+                from: (value) => Number(value)
+            }
+        });
+
+        // Update year display on slider change
+        yearSlider.noUiSlider.on('update', (values) => {
+            yearDisplay.textContent = `${values[0]} - ${values[1]}`;
+        }); 
+</script>
+
+<script>
+    async function fetchGenres() {
+        try {
+            const response = await fetch('/genres');
+            const genres = await response.json();
+    
+            const includedGenresSelect = document.getElementById('included-genres');
+            const excludedGenresSelect = document.getElementById('excluded-genres');
+            
+            // Clear existing options
+            includedGenresSelect.innerHTML = '';
+            excludedGenresSelect.innerHTML = '';
+    
+            genres.forEach(genre => {
+    
+                const includedOption = document.createElement('option');
+                includedOption.value = genre;
+                includedOption.textContent = genre;
+                includedGenresSelect.appendChild(includedOption);
+    
+                const excludedOption = document.createElement('option');
+                excludedOption.value = genre;
+                excludedOption.textContent = genre;
+                excludedGenresSelect.appendChild(excludedOption);
+            });
+        } catch (error) {
+            console.error("Error fetching genres:", error);
+        }
+    }
+
+    async function fetchTags() {
+        try {
+            const response = await fetch('/tags');
+            const tags = await response.json();
+    
+            const includedTagsSelect = document.getElementById('included-tags');
+            const excludedTagsSelect = document.getElementById('excluded-tags');
+    
+            // Clear existing options
+            includedTagsSelect.innerHTML = '';
+            excludedTagsSelect.innerHTML = '';
+    
+            tags.forEach(tag => {
+    
+                const includedOption = document.createElement('option');
+                includedOption.value = tag;
+                includedOption.textContent = tag;
+                includedTagsSelect.appendChild(includedOption);
+    
+                const excludedOption = document.createElement('option');
+                excludedOption.value = tag;
+                excludedOption.textContent = tag;
+                excludedTagsSelect.appendChild(excludedOption);
+            });
+        } catch (error) {
+            console.error("Error fetching tags:", error);
+        }
+    }
+
+    document.getElementById('anime-title').addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        const resultsContainer = document.getElementById('search-results');
+    
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+    
+        try {
+            const response = await fetch(`/searchAnime?q=${query}`);
+            const animeTitles = await response.json();
+    
+            resultsContainer.innerHTML = ''; // Clear previous results
+            resultsContainer.style.display = 'block';
+    
+            if (animeTitles.length === 0) {
+                resultsContainer.innerHTML = '<div>No results found</div>';
+            } else {
+                animeTitles.forEach(anime => {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.classList.add('search-result');
+    
+                    const coverImage = document.createElement('img');
+                    coverImage.src = anime.coverImage;
+                    coverImage.alt = `${anime.title} cover`;
+                    coverImage.classList.add('cover-image');
+    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.textContent = anime.title;
+    
+                    resultDiv.appendChild(coverImage);
+                    resultDiv.appendChild(titleDiv);
+    
+                    resultDiv.addEventListener('click', () => {
+                        document.getElementById('anime-title').value = anime.title;
+                        resultsContainer.style.display = 'none';
+    
+                        // Auto-select genres and tags
+                        autoSelectGenresAndTags(anime.genres, anime.tags);
+                    });
+    
+                    resultsContainer.appendChild(resultDiv);
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching anime search results:", error);
+        }
+    });
+    
+    // Function to auto-select genres and tags
+    function autoSelectGenresAndTags(genres, tags) {
+        const includedGenresSelect = $('#included-genres').val(genres).trigger('change');
+        const includedTagsSelect = $('#included-tags').val(tags).trigger('change');
+    }
+    
+    
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#anime-title') && !e.target.closest('#search-results')) {
+            document.getElementById('search-results').style.display = 'none';
+        }
+    });
+    
+    
+    // Fetch genres and tags when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchGenres();
+        fetchTags();
+    });    
+</script>
+
+<script>
+    $(document).ready(function() {
+        $(".selection-container").select2({
+            width: 'resolve',
+            placeholder: "Select an option",
+            allowClear: true
+        });
+    });        
+</script>
+
+<!-- SUGGEST -->
+<script>
+    document.getElementById('suggest-button').addEventListener('click', async () => {
+        const includedGenres = document.getElementById('included-genres').value;
+        const excludedGenres = document.getElementById('excluded-genres').value;
+        const includedTags = document.getElementById('included-tags').value;
+        const excludedTags = document.getElementById('excluded-tags').value;
+        const ratingRange = ratingSlider.noUiSlider.get().join('-');  // Get rating range
+        const yearRange = yearSlider.noUiSlider.get().join('-');      // Get year range
+    
+        const queryParams = new URLSearchParams({
+            includedGenres,
+            excludedGenres,
+            includedTags,
+            excludedTags,
+            ratingRange,
+            yearRange
+        });
+    
+        try {
+            const response = await fetch(`/suggestAnime?${queryParams.toString()}`);
+            const suggestions = await response.json();
+    
+            // Clear existing suggestions
+            const suggestionsContainer = document.querySelector('.suggestedAllAnimes');
+            suggestionsContainer.innerHTML = '';
+    
+            if (suggestions.length === 0) {
+                suggestionsContainer.innerHTML = '<p class="text-center text-white">No suggestions found. Try adjusting your filters!</p>';
+            } else {
+                // Add cards for each suggested anime
+                suggestions.forEach(anime => {
+                    const card = document.createElement('div');
+                    card.classList.add('suggestion-card');
+                    card.style.backgroundImage = `url(${anime.coverImage})`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                    card.style.borderRadius = '10px';
+                    card.style.margin = '10px';
+                    card.style.padding = '10px';
+                    card.style.color = 'white';
+                    card.style.textAlign = 'center';
+                    card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+                    card.style.height = '300px';
+                    card.style.width = '200px';
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'column';
+                    card.style.justifyContent = 'flex-end';
+    
+                    const overlay = document.createElement('div');
+                    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                    overlay.style.borderRadius = '10px';
+                    overlay.style.padding = '10px';
+                    overlay.style.width = '100%';
+    
+                    const title = document.createElement('h5');
+                    title.textContent = anime.title || 'Unknown Title';
+                    title.style.fontSize = '16px';
+                    title.style.marginBottom = '5px';
+    
+                    const score = document.createElement('p');
+                    score.textContent = `Score: ${anime.averageScore || 'N/A'}`;
+                    score.style.fontSize = '14px';
+    
+                    const year = document.createElement('p');
+                    year.textContent = `Year: ${anime.startDate || 'Unknown'}`;
+                    year.style.fontSize = '14px';
+    
+                    overlay.appendChild(title);
+                    overlay.appendChild(score);
+                    overlay.appendChild(year);
+    
+                    card.appendChild(overlay);
+                    suggestionsContainer.appendChild(card);
+                });
+            }
+    
+            // Make the .suggestedAnimes section visible and scroll to it
+            const suggestedAnimes = document.querySelector('.suggestedAnimes');
+            suggestedAnimes.classList.add('active');
+            suggestedAnimes.scrollIntoView({ behavior: 'smooth' });
+    
+        } catch (error) {
+            console.error("Error fetching suggestions:", error);
+        }
+    });
+    
+</script>
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<%- include('partials/footer.ejs') %>
