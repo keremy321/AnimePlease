@@ -2,6 +2,10 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+import fs from 'fs';
+import yaml from 'js-yaml';
 
 const app = express();
 const port = 3000;
@@ -13,6 +17,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+/**
+ * @swagger
+ * /genres:
+ *   get:
+ *     summary: Get all anime genres
+ *     responses:
+ *       200:
+ *         description: A list of available anime genres
+ */
 
 app.get('/genres', async (req, res) => {
     const query = `
@@ -32,6 +46,16 @@ app.get('/genres', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /tags:
+ *   get:
+ *     summary: Get all anime tags
+ *     responses:
+ *       200:
+ *         description: A list of available anime tags
+ */
+
 app.get('/tags', async (req, res) => {
     const query = `
         query {
@@ -50,6 +74,37 @@ app.get('/tags', async (req, res) => {
         res.status(500).send("Error fetching tags from AniList API");
     }
 });
+
+/**
+ * @swagger
+ * /searchAnime:
+ *   get:
+ *     summary: Search anime with specific filters
+ *     parameters:
+ *       - in: query
+ *         name: genres
+ *         schema:
+ *           type: string
+ *         description: Comma-separated genres to include (e.g., Action,Drama)
+ *       - in: query
+ *         name: tags
+ *         schema:
+ *           type: string
+ *         description: Comma-separated tags to include (e.g., School,Shounen)
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Filter anime by release year
+ *       - in: query
+ *         name: minScore
+ *         schema:
+ *           type: number
+ *         description: Minimum average score (e.g., 70)
+ *     responses:
+ *       200:
+ *         description: List of matching anime titles
+ */
 
 const searchCache = {};
 
@@ -101,6 +156,32 @@ app.get('/searchAnime', async (req, res) => {
         res.status(500).send("Error fetching anime titles");
     }
 });
+
+/**
+ * @swagger
+ * /suggestAnime:
+ *   get:
+ *     summary: Suggest anime titles based on preferences
+ *     parameters:
+ *       - in: query
+ *         name: includeGenres
+ *         schema:
+ *           type: string
+ *         description: Genres to prioritize
+ *       - in: query
+ *         name: excludeTags
+ *         schema:
+ *           type: string
+ *         description: Tags to avoid
+ *       - in: query
+ *         name: minScore
+ *         schema:
+ *           type: number
+ *         description: Minimum average score
+ *     responses:
+ *       200:
+ *         description: List of suggested anime titles
+ */
 
 app.get('/suggestAnime', async (req, res) => {
     const { includedGenres, excludedGenres, includedTags, excludedTags, ratingRange, yearRange } = req.query;
@@ -174,6 +255,23 @@ app.get('/suggestAnime', async (req, res) => {
     }
 });
 
+const swaggerOptions = {
+    swaggerDefinition: {
+      openapi: '3.0.0',
+      info: {
+        title: 'AnimePlease API',
+        version: '1.0.0',
+        description: 'API documentation for AnimePlease',
+      },
+    },
+    apis: ['./index.js'],
+  };
+  
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
+  
+const yamlSpec = yaml.dump(swaggerSpec);
+fs.writeFileSync('swagger.yaml', yamlSpec);
 
 app.get("/", (req, res) => {
     res.render("index");
