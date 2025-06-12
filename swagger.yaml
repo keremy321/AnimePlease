@@ -3,67 +3,6 @@ info:
   title: AnimePlease API
   version: 1.0.0
   description: API documentation for AnimePlease
-paths:
-  /genres:
-    get:
-      summary: Get all anime genres
-      responses:
-        '200':
-          description: A list of available anime genres
-  /tags:
-    get:
-      summary: Get all anime tags
-      responses:
-        '200':
-          description: A list of available anime tags
-  /searchAnime:
-    get:
-      summary: Search anime with specific filters
-      parameters:
-        - in: query
-          name: genres
-          schema:
-            type: string
-          description: Comma-separated genres to include (e.g., Action,Drama)
-        - in: query
-          name: tags
-          schema:
-            type: string
-          description: Comma-separated tags to include (e.g., School,Shounen)
-        - in: query
-          name: year
-          schema:
-            type: integer
-          description: Filter anime by release year
-        - in: query
-          name: minScore
-          schema:
-            type: number
-          description: Minimum average score (e.g., 70)
-      responses:
-        '200':
-          description: List of matching anime titles
-  /suggestAnime:
-    get:
-      summary: Suggest anime titles based on preferences
-      parameters:
-        - in: query
-          name: includeGenres
-          schema:
-            type: string
-          description: Genres to prioritize
-        - in: query
-          name: excludeTags
-          schema:
-            type: string
-          description: Tags to avoid
-        - in: query
-          name: minScore
-          schema:
-            type: number
-          description: Minimum average score
-      responses:
-        '200':
-          description: List of suggested anime titles
+paths: {}
 components: {}
 tags: []
